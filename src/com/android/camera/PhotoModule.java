@@ -463,6 +463,11 @@ public class PhotoModule
         // Surface texture is from camera screen nail and startPreview needs it.
         // This must be done before startPreview.
         mIsImageCaptureIntent = isImageCaptureIntent();
+        if (reuseNail) {
+            mActivity.reuseCameraScreenNail(!mIsImageCaptureIntent);
+        } else {
+            mActivity.createCameraScreenNail(!mIsImageCaptureIntent);
+        }
 
         mPreferences.setLocalId(mActivity, mCameraId);
         CameraSettings.upgradeLocalPreferences(mPreferences.getLocal());
@@ -477,13 +482,6 @@ public class PhotoModule
         initializeMiscControls();
         mLocationManager = new LocationManager(mActivity, this);
         initOnScreenIndicator();
-
-        Storage.setStorage(CameraSettings.readStorage(mPreferences));
-        if (reuseNail) {
-            mActivity.reuseCameraScreenNail(!mIsImageCaptureIntent);
-        } else {
-            mActivity.createCameraScreenNail(!mIsImageCaptureIntent);
-        }
     }
 
     // Prompt the user to pick to record location for the very first run of
@@ -583,6 +581,8 @@ public class PhotoModule
         initializeZoom();
         updateOnScreenIndicators();
         showTapToFocusToastIfNeeded();
+        // Load External storage settings
+        mActivity.initStoragePrefs(mPreferences);
     }
 
     private void initializePhotoControl() {
@@ -640,6 +640,7 @@ public class PhotoModule
         addIdleHandler();
 
         mActivity.updateStorageSpaceAndHint();
+
     }
 
     private void showTapToFocusToastIfNeeded() {
@@ -1689,6 +1690,9 @@ public class PhotoModule
     public void updateCameraAppView() {
         // Setup Power shutter
         mActivity.initPowerShutter(mPreferences);
+
+        // Load External storage settings
+        mActivity.initStoragePrefs(mPreferences);
     }
 
     @Override
@@ -1771,6 +1775,9 @@ public class PhotoModule
 
         // Load the power shutter
         mActivity.initPowerShutter(mPreferences);
+
+        // Load External storage Settings
+        mActivity.initStoragePrefs(mPreferences);
 
         // Clear UI.
         collapseCameraControls();
@@ -1913,6 +1920,9 @@ public class PhotoModule
         initializeFocusManager();
         initializeMiscControls();
         loadCameraPreferences();
+
+        // Load External storage settings
+        mActivity.initStoragePrefs(mPreferences);
 
         // from initializeFirstTime()
         mShutterButton = mActivity.getShutterButton();
@@ -2535,17 +2545,11 @@ public class PhotoModule
                 mPreferences, mContentResolver);
         mLocationManager.recordLocation(recordLocation);
 
-        String storage = CameraSettings.readStorage(mPreferences);
-        if (!storage.equals(Storage.getStorage())) {
-            Storage.setStorage(storage);
-            mActivity.updateStorageSpaceAndHint();
-            mActivity.reuseCameraScreenNail(!mIsImageCaptureIntent);
-        }
-
         setCameraParametersWhenIdle(UPDATE_PARAM_PREFERENCE);
         setPreviewFrameLayoutAspectRatio();
         updateOnScreenIndicators();
         mActivity.initPowerShutter(mPreferences);
+        mActivity.initStoragePrefs(mPreferences);
     }
 
     @Override
